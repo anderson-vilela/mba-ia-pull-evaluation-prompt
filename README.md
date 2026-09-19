@@ -59,6 +59,7 @@ Métricas Base:
 
 ✅ STATUS: APROVADO - Todas as métricas >= 0.9
 ```
+
 ---
 
 ## Tecnologias obrigatórias
@@ -287,50 +288,220 @@ python src/evaluate.py
 
 ---
 
-## Entregável
+## Técnicas Aplicadas (Fase 2)
 
-1. **Repositório público no GitHub** (fork do repositório base) contendo:
+Para transformar o prompt inicial v1 em uma versão de alta performance (v2) capaz de superar o limiar de 0.90 em todas as 5 métricas de avaliação, foram combinadas quatro técnicas essenciais de Engenharia de Prompts:
 
-   - Todo o código-fonte implementado
-   - Arquivo `prompts/bug_to_user_story_v2.yml` 100% preenchido e funcional
-   - Arquivo `README.md` atualizado com:
+### 1. Few-Shot Learning (Obrigatória)
 
-2. **README.md deve conter:**
+- **Motivação:** Modelos de linguagem se beneficiam enormemente de demonstrações diretas de padrão de resposta (_in-context learning_). Sem exemplos, o modelo gerava respostas em formatos divergentes e com níveis de profundidade inconsistentes.
+- **Aplicação Prática:** Foram fornecidos 3 exemplos completos de entrada e saída correspondentes aos três perfis de complexidade do dataset (`simples`, `médio` e `complexo`):
 
-   A) **Seção "Técnicas Aplicadas (Fase 2)"**:
+```markdown
+[EXEMPLO 1 - BUG SIMPLES]
+Relato do Bug:
+Botão de adicionar ao carrinho não funciona no produto ID 1234.
 
-   - Quais técnicas avançadas você escolheu para refatorar os prompts
-   - Justificativa de por que escolheu cada técnica
-   - Exemplos práticos de como aplicou cada técnica
+Resposta:
+Como um cliente navegando na loja, eu quero adicionar produtos ao meu carrinho de compras, para que eu possa continuar comprando e finalizar minha compra depois.
 
-   B) **Seção "Resultados Finais"**:
+Critérios de Aceitação:
 
-   - Link público do seu dashboard do LangSmith mostrando as avaliações
-   - Screenshots das avaliações com as notas mínimas de 0.9 atingidas
-   - Tabela comparativa: prompts ruins (v1) vs prompts otimizados (v2)
+- Dado que estou visualizando um produto
+- Quando clico no botão "Adicionar ao Carrinho"
+- Então o produto deve ser adicionado ao carrinho
+- E devo ver uma confirmação visual
+- E o contador do carrinho deve ser atualizado
+```
 
-   C) **Seção "Como Executar"**:
+### 2. Role Prompting (Definição de Persona)
 
-   - Instruções claras e detalhadas de como executar o projeto
-   - Pré-requisitos e dependências
-   - Comandos para cada fase do projeto
+- **Motivação:** O prompt v1 continha uma definição genérica ("Você é um assistente..."). Isso impedia o modelo de balancear empatia com o usuário e autoridade técnica para guiar o time de engenharia.
+- **Aplicação Prática:** Estabelecida a persona de **Staff Product Manager & Agile Technical Lead**:
 
-3. **Evidências no LangSmith**:
-   - Link público (ou screenshots) do dashboard do LangSmith
-   - Devem estar visíveis:
+```text
+Você é um Staff Product Manager e Agile Technical Lead especialista em engenharia de requisitos de software e metodologias ágeis.
+Sua missão é analisar relatos de bugs (bug reports) e transformá-los em User Stories completas, profissionais, concisas e altamente acionáveis para o time de desenvolvimento.
+```
 
-     - Dataset de avaliação com 15 exemplos
-     - Execuções dos prompts v2 (otimizados) com notas ≥ 0.9
-     - Tracing detalhado de pelo menos 3 exemplos
+### 3. Skeleton of Thought & Adaptação Estrutural Dinâmica
+
+- **Motivação:** O dataset de avaliação é heterogêneo, contendo desde bugs simples de interface até falhas críticas de infraestrutura e sincronização de dados. Tratar todos com o mesmo template causava perda de clareza em bugs simples (devido a excesso de seções) ou falta de completude em bugs complexos.
+- **Aplicação Prática:** O prompt orienta a geração do esqueleto estrutural adequado conforme a complexidade identificada:
+  - **Bugs Simples:** Exclusivamente User Story e Critérios de Aceitação Given-When-Then. Sem seções técnicas adicionais para preservar máxima clareza e concisão.
+  - **Bugs Médios:** User Story, Critérios e seção de `Contexto Técnico:` (ou `Contexto de Segurança:`).
+  - **Bugs Complexos:** Estrutura completa:
+    - `=== USER STORY PRINCIPAL ===`
+    - `=== CRITÉRIOS DE ACEITAÇÃO ===` (subtópicos A, B, C, D)
+    - `=== CRITÉRIOS TÉCNICOS ===`
+    - `=== CONTEXTO DO BUG ===` (Severidade e Impacto)
+    - `=== TASKS TÉCNICAS SUGERIDAS ===`
+
+### 4. Chain of Thought (CoT) e Rigor Factual
+
+- **Motivação:** Evitar alucinações e inferências infundadas (ex.: supor tecnologias ou formatos de arquivo não mencionados no relato).
+- **Aplicação Prática:** Instruções explícitas de raciocínio orientado à fidelidade:
+  - Extrair rigorosamente a persona afetada e o benefício real a partir do relato.
+  - Formular critérios testáveis e mensuráveis no padrão BDD.
+  - Proibir invenção de tecnologias, endpoints ou suposições não citadas.
 
 ---
 
-## Dicas Finais
+## Resultados Finais
 
-- **Lembre-se da importância da especificidade, contexto e persona** ao refatorar prompts
-- **Use Few-shot Learning com 2-3 exemplos claros** para melhorar drasticamente a performance
-- **Chain of Thought (CoT)** é excelente para tarefas que exigem raciocínio complexo (como análise de bugs)
-- **Use o Tracing do LangSmith** como sua principal ferramenta de debug - ele mostra exatamente o que o LLM está "pensando"
-- **Não altere os datasets de avaliação** - apenas os prompts em `prompts/bug_to_user_story_v2.yml`
-- **Itere, itere, itere** - é normal precisar de 3-5 iterações para atingir 0.9 em todas as métricas
-- **Documente seu processo** - a jornada de otimização é tão importante quanto o resultado final
+### Links de Acesso
+
+- **LangSmith Prompt Hub (Prompt v2 Público):** [andersonvilela-dev/bug_to_user_story_v2](https://smith.langchain.com/hub/andersonvilela-dev/bug_to_user_story_v2)
+- **LangSmith Workspace Project (Direto):** [prompt-optimization-challenge-resolved](https://smith.langchain.com/o/9870836d-ee16-4e6c-990b-d664b6ec3909/projects/p/fcd9fc0d-b69a-4c6c-8968-d4006fc6b143)
+- **LangSmith Dataset (Público):** [prompt-optimization-challenge-resolved-eval](https://smith.langchain.com/public/cb74bf43-6b08-489d-9925-04661a8f72b6/d)
+- **Evidências de Tracing (Links Públicos Compartilhados):**
+  - [Trace 1 - Bug Simples](https://smith.langchain.com/public/3d30710d-0302-4643-a9c0-9e09050df194/r)
+  - [Trace 2 - Bug Médio](https://smith.langchain.com/public/fdf0d332-f665-47e6-b8a4-e0479367e3c2/r)
+  - [Trace 3 - Bug Complexo](https://smith.langchain.com/public/8d9bde68-2e0f-424b-9107-b4441c5e8f0a/r)
+
+### Tabela Comparativa: Prompt v1 vs Prompt v2
+
+| Métrica         | Prompt v1 (Inicial) | Prompt v2 (Otimizado) | Variação |     Status      |
+| :-------------- | :-----------------: | :-------------------: | :------: | :-------------: |
+| **Helpfulness** |        0.45         |       **0.92**        |  +104%   |   ✅ Aprovado   |
+| **Correctness** |        0.52         |       **0.91**        |   +75%   |   ✅ Aprovado   |
+| **F1-Score**    |        0.48         |       **0.91**        |   +90%   |   ✅ Aprovado   |
+| **Clarity**     |        0.50         |       **0.94**        |   +88%   |   ✅ Aprovado   |
+| **Precision**   |        0.46         |       **0.91**        |   +98%   |   ✅ Aprovado   |
+| **Média Geral** |     **0.4820**      |      **0.9174**       | **+90%** | ✅ **APROVADO** |
+
+> **Critério de Aprovação Atingido:** Todas as 5 métricas obtiveram pontuação $\ge 0.90$ (90%) e média geral de **0.9174**, superando o limiar oficial tanto da especificação base ($\ge 0.80$) quanto do script validador `src/evaluate.py` ($\ge 0.90$).
+
+### Evidência de Execução da Avaliação Oficial (Terminal)
+
+```text
+==================================================
+AVALIAÇÃO DE PROMPTS OTIMIZADOS
+==================================================
+
+Provider: google
+Modelo Principal: gemini-3.5-flash-lite
+Modelo de Avaliação: gemini-3.5-flash-lite
+
+Criando dataset de avaliação: prompt-optimization-challenge-resolved-eval...
+   ✓ Carregados 15 exemplos do arquivo datasets/bug_to_user_story.jsonl
+   ✓ Dataset 'prompt-optimization-challenge-resolved-eval' já existe, usando existente
+
+======================================================================
+PROMPTS PARA AVALIAR
+======================================================================
+
+🔍 Avaliando: andersonvilela-dev/bug_to_user_story_v2
+   Puxando prompt do LangSmith Hub: andersonvilela-dev/bug_to_user_story_v2
+   ✓ Prompt carregado com sucesso
+   Dataset: 15 exemplos
+   Avaliando exemplos...
+      [1/15] F1:0.92 Clarity:0.95 Precision:0.93
+      [2/15] F1:0.92 Clarity:0.95 Precision:0.95
+      [3/15] F1:1.00 Clarity:0.95 Precision:0.85
+      [4/15] F1:0.90 Clarity:0.95 Precision:0.93
+      [5/15] F1:0.77 Clarity:0.95 Precision:0.85
+      [6/15] F1:0.92 Clarity:0.95 Precision:0.93
+      [7/15] F1:0.92 Clarity:0.90 Precision:0.93
+      [8/15] F1:0.85 Clarity:0.85 Precision:0.93
+      [9/15] F1:0.92 Clarity:0.90 Precision:0.83
+      [10/15] F1:0.77 Clarity:0.90 Precision:0.93
+      [11/15] F1:0.92 Clarity:1.00 Precision:0.87
+      [12/15] F1:1.00 Clarity:0.90 Precision:0.87
+      [13/15] F1:0.97 Clarity:0.95 Precision:0.93
+      [14/15] F1:0.87 Clarity:1.00 Precision:0.93
+      [15/15] F1:0.97 Clarity:1.00 Precision:0.93
+
+==================================================
+Prompt: andersonvilela-dev/bug_to_user_story_v2
+==================================================
+
+Métricas Derivadas:
+  - Helpfulness: 0.92 ✓
+  - Correctness: 0.91 ✓
+
+Métricas Base:
+  - F1-Score: 0.91 ✓
+  - Clarity: 0.94 ✓
+  - Precision: 0.91 ✓
+
+--------------------------------------------------
+📊 MÉDIA GERAL: 0.9174
+--------------------------------------------------
+
+✅ STATUS: APROVADO - Todas as métricas >= 0.9
+
+==================================================
+RESUMO FINAL
+==================================================
+
+Prompts avaliados: 1
+Aprovados: 1
+Reprovados: 0
+
+✅ Todos os prompts atingiram todas as métricas >= 0.9!
+```
+
+---
+
+## Como Executar
+
+### Pré-requisitos
+
+- Docker e Docker Compose instalados **OU** Python 3.12+ localmente.
+- Arquivo `.env` configurado com credenciais válidas (`LANGSMITH_API_KEY`, `USERNAME_LANGSMITH_HUB` e `GOOGLE_API_KEY` ou `OPENAI_API_KEY`).
+
+### Opção 1: Execução via Docker (Ambiente Conteinerizado Recomendado)
+
+1. **Subir o ambiente:**
+
+   ```bash
+   docker compose -f dev.compose.yaml up -d --build
+   ```
+
+2. **Fazer pull do prompt v1 do LangSmith Hub:**
+
+   ```bash
+   docker compose -f dev.compose.yaml exec app python src/pull_prompts.py
+   ```
+
+3. **Executar a suíte de testes unitários (pytest):**
+
+   ```bash
+   docker compose -f dev.compose.yaml exec app pytest tests/test_prompts.py -v
+   ```
+
+4. **Publicar o prompt v2 no LangSmith Hub:**
+
+   ```bash
+   docker compose -f dev.compose.yaml exec app python src/push_prompts.py
+   ```
+
+5. **Executar a avaliação automatizada contra os 15 exemplos:**
+
+   ```bash
+   docker compose -f dev.compose.yaml exec app python src/evaluate.py
+   ```
+
+6. **Parar o ambiente ao concluir:**
+   ```bash
+   docker compose -f dev.compose.yaml down
+   ```
+
+### Opção 2: Execução em Ambiente Virtual Local (venv)
+
+1. **Criar e ativar o ambiente virtual:**
+
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+2. **Executar os comandos em sequência:**
+   ```bash
+   python src/pull_prompts.py
+   pytest tests/test_prompts.py -v
+   python src/push_prompts.py
+   python src/evaluate.py
+   ```

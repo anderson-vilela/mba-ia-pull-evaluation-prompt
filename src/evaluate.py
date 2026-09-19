@@ -373,8 +373,13 @@ def main():
 
     if all_passed:
         print("✅ Todos os prompts atingiram todas as métricas >= 0.9!")
+        try:
+            proj = client.read_project(project_name=project_name)
+            project_url = getattr(proj, 'url', None) or f"https://smith.langchain.com/o/{proj.tenant_id}/projects/p/{proj.id}"
+        except Exception:
+            project_url = f"https://smith.langchain.com/projects/{project_name}"
         print(f"\n✓ Confira os resultados em:")
-        print(f"  https://smith.langchain.com/projects/{project_name}")
+        print(f"  {project_url}")
         print("\nPróximos passos:")
         print("1. Documente o processo no README.md")
         print("2. Capture screenshots das avaliações")
